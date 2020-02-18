@@ -5,7 +5,7 @@ Camera calibration
 ~~~~~~~~~~~~~~~~~~
 
 Usage:
-    python camera_calibrate.py \
+    python calibrate_camera.py \
         -i /dev/video0 \
         -grid 9x6 \
         -output fisheye.yaml \
