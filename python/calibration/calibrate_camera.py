@@ -5,7 +5,7 @@ Camera calibration
 ~~~~~~~~~~~~~~~~~~
 
 Usage:
-    python calibrate_camera.py \
+    python camera_calibrate.py \
         -i /dev/video0 \
         -grid 9x6 \
         -output fisheye.yaml \
@@ -14,17 +14,19 @@ Usage:
         --fisheye
 """
 import argparse
-import os
 import numpy as np
 import cv2
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", default=0, help="input video file or camera device")
-    parser.add_argument("-grid", "--grid", default="20x20", help="size of the grid (rows x cols)")
-    parser.add_argument("-framestep", type=int, default=20, help="use every nth frame in the video")
-    parser.add_argument("-o", "--output", default="./yaml",
+    parser.add_argument("-i", "--input", default=0,
+                        help="input video file or camera device")
+    parser.add_argument("-grid", "--grid", default="20x20",
+                        help="size of the grid (rows x cols)")
+    parser.add_argument("-framestep", type=int, default=20,
+                        help="use every nth frame in the video")
+    parser.add_argument("-o", "--output", default="camera_params.yaml",
                         help="path to output yaml file")
     parser.add_argument("-resolution", "--resolution", default="640x480",
                         help="resolution of the camera")
@@ -33,12 +35,9 @@ def main():
 
     args = parser.parse_args()
 
-    if not os.path.exists(args.output):
-        os.mkdir(args.output)
-
     try:
         source = cv2.VideoCapture(int(args.input))
-    except:
+    except ValueError:
         source = cv2.VideoCapture(args.input)
 
     W, H = [int(x) for x in args.resolution.split("x")]
@@ -63,6 +62,7 @@ def main():
         if i % args.framestep != 0:
             continue
 
+        # 标定板角点检测
         print("searching for chessboard corners in frame " + str(i) + "...")
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         found, corners = cv2.findChessboardCorners(
@@ -79,13 +79,19 @@ def main():
             imgpoints.append(corners.reshape(1, -1, 2))
             objpoints.append(grid_points.reshape(1, -1, 3))
             cv2.drawChessboardCorners(img, grid_size, corners, found)
+
+        # 在窗口中显示帮助信息
         text1 = "press c to calibrate"
         text2 = "press q to quit"
         text3 = "device: {}".format(args.input)
+        font = cv2.FONT_HERSHEY_SIMPLEX
         fontscale = 0.6
-        cv2.putText(img, text1, (20, 70), cv2.FONT_HERSHEY_SIMPLEX, fontscale, (255, 200, 0), 2)
-        cv2.putText(img, text2, (20, 110), cv2.FONT_HERSHEY_SIMPLEX, fontscale, (255, 200, 0), 2)
-        cv2.putText(img, text3, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, fontscale, (255, 200, 0), 2)
+        fontcolor = (255, 200, 0)
+        cv2.putText(img, text1, (20, 70), font, fontscale, fontcolor, 2)
+        cv2.putText(img, text2, (20, 110), font, fontscale, fontcolor, 2)
+        cv2.putText(img, text3, (20, 30), font, fontscale, fontcolor, 2)
+
+        # 键盘响应
         cv2.imshow("corners", img)
         key = cv2.waitKey(1) & 0xFF
         if key == ord("c"):
@@ -116,6 +122,7 @@ def main():
                              cv2.fisheye.CALIB_FIX_SKEW)
 
         # 求出内参矩阵和畸变系数
+        # 分是否是鱼眼相机
         if args.fisheye:
             ret, mtx, dist, rvecs, tvecs = cv2.fisheye.calibrate(
                 objpoints,
@@ -135,21 +142,24 @@ def main():
                 (W, H),
                 None,
                 None)
-        if ret:
-            print(ret)
-            data = {"dim": np.array([W, H]), "K": K, "D": D}
-            fname = os.path.join(args.output, "camera" + str(args.input) + ".yaml")
-            print(fname)
-            fs = cv2.FileStorage(fname, cv2.FileStorage_WRITE)
-            with open(fname, "w") as f:
-                for key, val in data.items():
-                    fs.write(key, val)
-                fs.release()
-            print("succesfully saved camera data")
 
-            cv2.putText(img, "Success!", (220 , 240), cv2.FONT_HERSHEY_COMPLEX, 2, (0, 0, 255), 2)
+        fontpos = (220, 240)
+        font = cv2.FONT_HERSHEY_COMPLEX
+        fontcolor = (0, 0, 255)
+        if ret:
+            data = {
+                "dim": np.array([W, H]),
+                "camera_matrix": K,
+                "dist_coeffs": D
+            }
+            fs = cv2.FileStorage(args.output, cv2.FileStorage_WRITE)
+            for key, val in data.items():
+                fs.write(key, val)
+            fs.release()
+            print("succesfully saved camera data")
+            cv2.putText(img, "Success!", fontpos, font, 2, fontcolor, 2)
         else:
-            cv2.putText(img, "Failed!", (220, 240), cv2.FONT_HERSHEY_COMPLEX, 2, (0, 0, 255), 2)
+            cv2.putText(img, "Failed!", fontpos, font, 2, fontcolor, 2)
 
         cv2.imshow("corners", img)
         cv2.waitKey(0)
