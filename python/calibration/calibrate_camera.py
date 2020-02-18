@@ -1,17 +1,36 @@
 #!/usr/bin/python3
 """
-~~~~~~~~~~~~~~~~~~
-Camera calibration
-~~~~~~~~~~~~~~~~~~
+~~~~~~
+相机标定
+~~~~~~
 
-Usage:
-    python camera_calibrate.py \
-        -i /dev/video0 \
-        -grid 9x6 \
-        -output fisheye.yaml \
-        -framestep 20 \
-        -resolution 640x480
-        --fisheye
+作者: mathzhaoliang@gmail.com
+
+使用方法:
+
+1. 运行 python camera_calibrate.py \
+         -i /dev/video0 \
+         -grid 9x6 \
+         -output fisheye.yaml \
+         -framestep 20 \
+         -resolution 640x480
+         --fisheye
+    
+   -i 为相机设备名,
+   -grid 为标定板内角点大小
+   -output 为输出的 yaml 文件名
+   -framestep 为检测频率, 即每隔此数目的帧检测一次角点
+   -resolution 为相机分辨率
+   --fisheye 指明是否是鱼眼相机
+   
+2. 手持标定板在镜头前变换位置进行检测, 然后按 'c' 键开始计算内参,
+   可以随时按 'q' 退出.
+ 
+3. 相机内参文件被输出到 yaml 文件中, 其中
+   'dim' 为标定时使用的分辨率
+   'dist_coeffs' 为畸变系数
+   'camera_matrix' 为内参矩阵
+
 """
 import argparse
 import numpy as np
