@@ -159,7 +159,7 @@ class ExtendedKalmanFilter(object):
         # 如果测量值为 None 的话则不作更新,
         # 使用之前的预测值.
         if z is None:
-            self.z = np.array([[None] * self.dim_z]).T
+            self._z = np.array([None] * self.dim_z)
             self.x_post = self._x.copy()
             self.P_post = self._P.copy()
             return
