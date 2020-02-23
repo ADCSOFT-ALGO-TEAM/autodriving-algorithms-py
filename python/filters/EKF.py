@@ -41,8 +41,6 @@ class ExtendedKalmanFilter(object):
 
         dim_z : 观测向量维数
 
-        dim_u : 控制向量维数
-
         init_x : 初始状态向量估计值
 
         init_P : 初始状态协方差
