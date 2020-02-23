@@ -41,6 +41,8 @@ class ExtendedKalmanFilter(object):
 
         dim_z : 观测向量维数
 
+        dim_u : 控制向量维数
+
         init_x : 初始状态向量估计值
 
         init_P : 初始状态协方差
@@ -74,6 +76,7 @@ class ExtendedKalmanFilter(object):
         """
         self.dim_x = dim_x
         self.dim_z = dim_z
+        self.history = []
 
         self._x = np.zeros(dim_x)
         self._y = np.zeros(dim_z)
@@ -102,8 +105,6 @@ class ExtendedKalmanFilter(object):
 
         self.x_post = self._x.copy()
         self.P_post = self._P.copy()
-
-        self.history = []
 
     def set_init_state(self, x0):
         """
@@ -138,7 +139,7 @@ class ExtendedKalmanFilter(object):
         设置观测噪声协方差矩阵. 必须形如 numpy.array(dim_z, dim_z).
         """
         R = np.asarray(R)
-        if R.shape != (self.dim_x, self.dim_x):
+        if R.shape != (self.dim_z, self.dim_z):
             raise ValueError("Covariance matrix dimension error: {}".format(R.shape))
         self._R = R
 
