@@ -76,12 +76,8 @@ class ExtendedKalmanFilter(object):
         """
         self.dim_x = dim_x
         self.dim_z = dim_z
-        self.history = []
 
-        self._x = np.zeros(dim_x)
-        self._y = np.zeros(dim_z)
-
-        self._x = np.zeros(dim_x)
+        self._x = np.zeros((dim_x, 1))
         if init_x is not None:
             self.set_init_state(init_x)
 
@@ -99,22 +95,25 @@ class ExtendedKalmanFilter(object):
 
         self._K = np.zeros((dim_x, dim_z))
         self._I = np.eye(dim_x)
-        self._z = np.array([None] * self.dim_z)
+        self._y = np.zeros((dim_z, 1))
+        self._z = np.array([[None] * self.dim_z]).T
         self.x_prior = self._x.copy()
         self.P_prior = self._P.copy()
 
         self.x_post = self._x.copy()
         self.P_post = self._P.copy()
 
+        self.history = self._x
+
     def set_init_state(self, x0):
         """
-        设置系统初始状态. 必须形如 numpy.array(dim_x).
+        设置系统初始状态. 必须形如 numpy.array(dim_x, 1) 或者 numpy.array(dim_x).
         """
         x0 = np.asarray(x0)
-        if x0.shape != (self.dim_x,):
+        if (x0.shape != (self.dim_x,) and x0.shape != (self.dim_x, 1)):
             raise ValueError("State vector dimension error: {}".format(x0.shape))
-        self._x = x0
-        self.history.append(x0)
+        self._x = x0.reshape(self.dim_x, 1)
+        self.history = x0
 
     def set_init_cov(self, P):
         """
@@ -191,7 +190,7 @@ class ExtendedKalmanFilter(object):
         # 如果测量值为 None 的话则不作更新,
         # 使用之前的预测值.
         if z is None:
-            self._z = np.array([None] * self.dim_z)
+            self._z = np.array([[None] * self.dim_z]).T
             self.x_post = self._x.copy()
             self.P_post = self._P.copy()
             return
@@ -225,5 +224,5 @@ class ExtendedKalmanFilter(object):
         self.x_post = self._x.copy()
         self.P_post = self._P.copy()
 
-        self.history.append(self._x)
+        self.history = np.hstack((self.history, self._x))
         return self
